@@ -1,0 +1,17 @@
+# How the portal installs and runs this harness. Before submitting, set `ref` to the full sha of the commit
+# you pushed (`git rev-parse HEAD`), in quotes, and `repo` to your own repository.
+name: demo-harness
+source:
+  repo: https://github.com/EvanZhuang/harness-competition-demo
+  ref: "<the full 40-character sha of the commit you submit>"
+run:
+  # Once, with internet, in a clean debian:bookworm container: everything the command needs goes under
+  # /opt/harness, here a uv-managed Python 3.12 venv with the pinned SDK.
+  install: >-
+    uv venv --python 3.12 /opt/harness/venv
+    && uv pip install --python /opt/harness/venv/bin/python -r {src}/requirements.txt
+  # In every task's container, offline except for the model endpoint, in the task's working directory.
+  command: /opt/harness/venv/bin/python {src}/agent.py --model {model_id} "$HARBOR_INSTRUCTION"
+env:
+  ANTHROPIC_BASE_URL: "{proxy_url}"
+  ANTHROPIC_API_KEY: "{proxy_key}"
