@@ -53,6 +53,7 @@ Rules the portal enforces at submit time (`kit check` applies the same rules off
 
 - `run.command` names the model through `{model}` or `{model_id}`; the model is never hard-coded.
 - `{proxy_key}` appears only as an entire `env` value, never inside a longer string or in the command.
+- `env` values contain no `${...}`: nothing is filled in from the evaluation host's environment.
 - `env` names match `[A-Z_][A-Z0-9_]*`; every value is a quoted string (an unquoted `true`, `1.10` or
   `0755` is refused, because YAML would read it as a boolean or a number).
 - No keys outside this schema; at most 16 KiB.
