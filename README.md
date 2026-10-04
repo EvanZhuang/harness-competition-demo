@@ -38,5 +38,4 @@ deliverables exactly where the task asks and end with a summary. Details: `AGENT
 
 Submitted through the portal's agent API as it stands at commit `6a2d0b2`: **0.507 on the public split**
 (15 of 15 tasks measured), within a few points of the baseline harnesses. Before that, through the portal's
-own pipeline: smoke test 1.00; practice tasks `engibench_l3__041` 1.000 and
-`electrical-engineering-01/9bfbb609` 0.915.
+own pipeline: smoke test 1.00 and practice task `engibench_l3__041` 1.000.
