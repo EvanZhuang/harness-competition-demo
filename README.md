@@ -1,41 +1,42 @@
-# Harness competition: demo harness
+# harness-competition-demo
 
-A complete, minimal entry for the harness competition: Claude Opus 5.5 with one `run_shell` tool, in a
-streaming loop. Every entry runs the same model on hidden engineering tasks, so the harness is what competes:
-the prompt, the tools, the loop, context management, sub-agents. Copy this, make it better, submit it.
+A minimal harness for the harness competition of Physical-Engineering’s Last Exam, in serve mode: `serve.py` is a
+websocket server. For each task, the evaluator starts it in its own container, sends the task, and runs the harness's
+`exec`, `read_file` and `write_file` requests in the task's container. The harness calls whatever model it is
+configured for; its container reaches only the hosts `serve.egress` in `recipe.yaml` declares.
 
-| file | what |
-|---|---|
-| `agent.py` | the whole agent, about 100 lines: read it first |
-| `requirements.txt` | the pinned SDK |
-| `recipe.yaml` | how the portal installs it (`run.install`) and runs it on a task (`run.command`) |
-| `AGENTS.md` | everything a coding agent needs to build, check and submit a harness |
+Copy this repository as the start of your own harness. [AGENTS.md](AGENTS.md) is the full contract (the recipe, the
+serve protocol, secrets, the kit, the rules), written so a coding agent can follow it.
 
-## Make it yours
+## The model
 
-1. **Use this template** (or copy the files) into your own GitHub repository.
-2. **Improve the harness.** Some directions: a better system prompt, file-editing and search tools, planning,
-   verification steps before the final answer, context compaction for long tasks, sub-agents.
-3. **Test it with the kit** from the competition repository (Docker and Harbor needed; see `AGENTS.md`):
-   ```bash
-   python -m portal.kit check recipe.yaml
-   python -m portal.kit run recipe.yaml --smoke-only
-   python -m portal.kit run recipe.yaml --tasks <a practice task>
-   ```
-4. **Pin and submit.** Push, set `ref` in `recipe.yaml` to `git rev-parse HEAD` (in quotes) and `repo` to your
-   repository, then paste the recipe on the portal's Submit page, or
-   `python -m portal.kit submit recipe.yaml --yes` with an agent token from the portal.
+Pick it in `recipe.yaml`: plain values under `env:`, keys under `secrets:` (save them on the portal, under the same
+names, before you submit).
 
-**With a coding agent:** tell it *"Read AGENTS.md, then build, check and submit my harness."*
+| model | `env` | `secrets` | `serve.egress` |
+|---|---|---|---|
+| the portal's Claude Opus 5.5 (as committed) | `MODEL_API: anthropic`, `MODEL: claude-opus-5-5`, `ANTHROPIC_BASE_URL: "{proxy_url}"`, `ANTHROPIC_API_KEY: "{proxy_key}"` | none | `[]` |
+| OpenAI | `MODEL_API: openai`, `MODEL: gpt-...` | `OPENAI_API_KEY` | `[api.openai.com]` |
+| DeepSeek | `MODEL_API: openai`, `MODEL: deepseek-chat`, `OPENAI_BASE_URL: https://api.deepseek.com` | `OPENAI_API_KEY` | `[api.deepseek.com]` |
+| your own litellm, vLLM or Beam endpoint | `MODEL_API: openai`, `MODEL: <its name>`, `OPENAI_BASE_URL: https://<host>/v1` | `OPENAI_API_KEY` | `[<host>]` |
 
-## The rules in one breath
+Set `model:` to what you call: the leaderboard shows it.
 
-Install everything under `/opt/harness` at build time; tasks run offline except for the model endpoint. Name
-the model with `{model_id}` and reach it through `{proxy_url}` / `{proxy_key}`. Stream every call. Write the
-deliverables exactly where the task asks and end with a summary. Details: `AGENTS.md`.
+## Develop locally
 
-## How this one did
+```bash
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+MODEL_API=openai MODEL=deepseek-chat OPENAI_BASE_URL=https://api.deepseek.com OPENAI_API_KEY=... \
+    .venv/bin/python serve.py --port 8765
+# in another shell, from the participant kit: run practice tasks against it
+python -m portal.kit dev --url ws://127.0.0.1:8765 --tasks <a practice task>
+```
 
-Submitted through the portal's agent API as it stands at commit `6a2d0b2`: **0.507 on the public split**
-(15 of 15 tasks measured), within a few points of the baseline harnesses. Before that, through the portal's
-own pipeline: smoke test 1.00 and practice task `engibench_l3__041` 1.000.
+`python -m portal.kit run recipe.yaml` builds the harness exactly as the portal does and runs it in its container.
+
+## Tested
+
+On the portal model (Claude Opus 5.5), through the full serve path on 2026-10-07: the smoke task 1.00, practice task
+`batch_1__hardened__engibench_l3__041` 0.947, practice task `batch_4__fresh__civil-engineering-01__8dad83bb` 0.677.
+
+MIT licensed.
